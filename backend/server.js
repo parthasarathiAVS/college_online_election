@@ -25,28 +25,26 @@ const PORT = process.env.PORT || 5000;
 // ======================
 // Middleware
 // ======================
-// CORS Configuration
+const cors = require('cors');
+
 const allowedOrigins = [
   'http://localhost:5173',
-  process.env.FRONTEND_URL
-].filter(Boolean);
+  'https://college-online-election-8b9vnosge-online-election.vercel.app',
+  'https://college-online-election.vercel.app'
+];
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests without an Origin (e.g. Postman)
     if (!origin) return callback(null, true);
 
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
 
-    return callback(new Error('CORS policy does not allow this origin.'));
+    return callback(new Error('Not allowed by CORS'));
   },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  credentials: true
 }));
-
 // ======================
 // Static Folder
 // ======================
