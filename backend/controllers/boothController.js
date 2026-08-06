@@ -110,7 +110,7 @@ exports.castVote = async (req, res) => {
     const { student_id, election_id, votes } = req.body;
     // votes is an array: [{ position_id, candidate_id }]
 
-    if (!student_id || !election_id || !votes || !Array.isArray(votes) || votes.length === 0) {
+    if (!election_id || !votes || !Array.isArray(votes) || votes.length === 0) {
       return res.status(400).json({ message: 'Invalid vote data' });
     }
 
@@ -121,19 +121,21 @@ exports.castVote = async (req, res) => {
       return res.status(400).json({ message: 'Election not active or not found' });
     }
 
-    const student = await Student.findOne({
-      where: { id: student_id, college_id, status: 'active' }
-    });
-    if (!student) {
-      return res.status(404).json({ message: 'Student not found' });
-    }
+    if (student_id) {
+      const student = await Student.findOne({
+        where: { id: student_id, college_id, status: 'active' }
+      });
+      if (!student) {
+        return res.status(404).json({ message: 'Student not found' });
+      }
 
-    // Double-check one-student-one-vote
-    const alreadyVoted = await VotedStudent.findOne({
-      where: { student_id, election_id }
-    });
-    if (alreadyVoted) {
-      return res.status(409).json({ message: 'Student has already voted' });
+      // Double-check one-student-one-vote
+      const alreadyVoted = await VotedStudent.findOne({
+        where: { student_id, election_id }
+      });
+      if (alreadyVoted) {
+        return res.status(409).json({ message: 'Student has already voted' });
+      }
     }
 
     // Encrypt and store each position vote
@@ -153,19 +155,21 @@ exports.castVote = async (req, res) => {
       });
     }
 
-    // Mark student as voted
-    await VotedStudent.create({
-      college_id,
-      student_id,
-      election_id,
-      voted_at: new Date()
-    });
+    // Mark student as voted if student_id was supplied by staff verification
+    if (student_id) {
+      await VotedStudent.create({
+        college_id,
+        student_id,
+        election_id,
+        voted_at: new Date()
+      });
+    }
 
     await AuditLog.create({
       college_id,
       user_type: 'system',
       action: 'VOTE_CAST',
-      details: `Vote recorded for election "${election.title}". Student ID masked for privacy.`,
+      details: `Vote recorded for election "${election.title}".`,
       ip_address: req.ip
     });
 

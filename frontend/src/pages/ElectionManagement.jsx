@@ -12,8 +12,10 @@ import ArchiveIcon from '@mui/icons-material/Archive';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { electionsAPI } from '../services/api';
+import { useNavigate } from 'react-router-dom';
 
 export default function ElectionManagement() {
+  const navigate = useNavigate();
   const [elections, setElections] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -69,7 +71,11 @@ export default function ElectionManagement() {
   const handleStatusAction = async (id, action) => {
     try {
       await electionsAPI.changeStatus(id, action);
-      fetchElections();
+      if (action === 'start') {
+        navigate('/evm-kiosk');
+      } else {
+        fetchElections();
+      }
     } catch (err) {
       alert(err.response?.data?.message || 'Action failed');
     }

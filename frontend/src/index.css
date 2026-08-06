@@ -75,6 +75,111 @@ body {
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+}
+
+/* Hide cursor everywhere in kiosk fullscreen mode — only show on interactive elements */
+.kiosk-fullscreen {
+  cursor: none !important;
+}
+
+.kiosk-fullscreen *:not(button):not(input):not(textarea):not([role="button"]):not(a) {
+  cursor: none !important;
+}
+
+.kiosk-fullscreen button,
+.kiosk-fullscreen input,
+.kiosk-fullscreen textarea,
+.kiosk-fullscreen [role="button"],
+.kiosk-fullscreen a,
+.kiosk-fullscreen .MuiButton-root,
+.kiosk-fullscreen .MuiIconButton-root,
+.kiosk-fullscreen .kiosk-interactive {
+  cursor: pointer !important;
+}
+
+/* Fullscreen re-enter prompt overlay */
+.kiosk-reenter-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(7, 10, 19, 0.97);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+}
+
+.kiosk-reenter-btn {
+  padding: 20px 60px !important;
+  font-size: 1.4rem !important;
+  font-weight: 900 !important;
+  border-radius: 16px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.1em !important;
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%) !important;
+  color: #fff !important;
+  border: none !important;
+  box-shadow: 0 0 40px rgba(16, 185, 129, 0.4), 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  animation: kiosk-pulse-btn 2s ease-in-out infinite;
+}
+
+.kiosk-reenter-btn:hover {
+  transform: scale(1.05) !important;
+  box-shadow: 0 0 60px rgba(16, 185, 129, 0.6), 0 12px 40px rgba(0, 0, 0, 0.4) !important;
+}
+
+@keyframes kiosk-pulse-btn {
+  0%, 100% {
+    box-shadow: 0 0 40px rgba(16, 185, 129, 0.4), 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 60px rgba(16, 185, 129, 0.6), 0 12px 40px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* Kiosk warning badge for keyboard lockdown indicator */
+.kiosk-lockdown-badge {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 12px;
+  padding: 8px 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+  color: #F87171;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  text-transform: uppercase;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  pointer-events: none;
+}
+
+.kiosk-lockdown-badge::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background: #EF4444;
+  border-radius: 50%;
+  animation: pulse-green 2s infinite;
+}
+
+/* Fullscreen body override — no scroll, full viewport */
+body:fullscreen,
+body:-webkit-full-screen,
+body:-moz-full-screen {
+  overflow: hidden !important;
 }
 
 /* Scrollbar */
