@@ -1,9 +1,13 @@
 import axios from 'axios';
 
-const API_BASE = import.meta.env.VITE_API_URL || '';
+const API_BASE = import.meta.env.VITE_API_URL || (
+  window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:5000/api'
+    : 'https://college-online-election.onrender.com/api'
+);
 
 const api = axios.create({
-  baseURL: 'https://college-online-election.onrender.com/api',
+  baseURL: API_BASE,
   headers: { 'Content-Type': 'application/json' }
 });
 

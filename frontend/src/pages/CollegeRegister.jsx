@@ -58,7 +58,8 @@ export default function CollegeRegister() {
       await authAPI.register(data);
       setSuccess(true);
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed');
+      const msg = err.response?.data?.message || err.response?.data?.error || err.message || 'Registration failed';
+      setError(msg);
     } finally {
       setLoading(false);
     }
