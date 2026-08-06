@@ -98,6 +98,17 @@ app.get('/api/health', (req, res) => {
 });
 
 // ======================
+// 404 API Fallback Handler
+// ======================
+
+app.use('/api/*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `API Endpoint '${req.originalUrl}' not found.`
+  });
+});
+
+// ======================
 // Error Handler
 // ======================
 

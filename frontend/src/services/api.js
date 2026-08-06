@@ -1,13 +1,18 @@
 import axios from 'axios';
 
-const API_BASE = import.meta.env.VITE_API_URL || (
-  window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+let rawBase = import.meta.env.VITE_API_URL || (
+  typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     ? 'http://localhost:5000/api'
     : 'https://college-online-election.onrender.com/api'
 );
 
+rawBase = rawBase.replace(/\/+$/, '');
+if (!rawBase.endsWith('/api')) {
+  rawBase += '/api';
+}
+
 const api = axios.create({
-  baseURL: API_BASE,
+  baseURL: rawBase,
   headers: { 'Content-Type': 'application/json' }
 });
 
@@ -16,6 +21,10 @@ api.interceptors.request.use(config => {
   const token = localStorage.getItem('vv_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+  // Automatically let browser set multipart/form-data boundary for FormData
+  if (config.data instanceof FormData) {
+    delete config.headers['Content-Type'];
   }
   return config;
 });
@@ -37,9 +46,7 @@ api.interceptors.response.use(
 
 // Auth
 export const authAPI = {
-  register: (data) => api.post('/auth/register', data, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  }),
+  register: (data) => api.post('/auth/register', data),
   collegeLogin: (data) => api.post('/auth/college/login', data),
   superAdminLogin: (data) => api.post('/auth/superadmin/login', data),
   verifySession: () => api.get('/auth/verify')
@@ -61,9 +68,7 @@ export const studentsAPI = {
   add: (data) => api.post('/students', data),
   update: (id, data) => api.put(`/students/${id}`, data),
   delete: (id) => api.delete(`/students/${id}`),
-  import: (formData) => api.post('/students/import', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  }),
+  import: (formData) => api.post('/students/import', formData),
   export: () => api.get('/students/export', { responseType: 'blob' })
 };
 
@@ -86,12 +91,8 @@ export const positionsAPI = {
 // Candidates
 export const candidatesAPI = {
   getAll: (params) => api.get('/candidates', { params }),
-  add: (formData) => api.post('/candidates', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  }),
-  update: (id, formData) => api.put(`/candidates/${id}`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  }),
+  add: (formData) => api.post('/candidates', formData),
+  update: (id, formData) => api.put(`/candidates/${id}`, formData),
   delete: (id) => api.delete(`/candidates/${id}`)
 };
 
