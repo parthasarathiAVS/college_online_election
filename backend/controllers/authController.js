@@ -11,14 +11,19 @@ exports.registerCollege = async (req, res) => {
       email, phone, address, website, password
     } = req.body;
 
-    const existing = await College.findOne({ where: { email } });
-    if (existing) {
-      return res.status(400).json({ message: 'Email already registered' });
+    if (!name || !college_code || !email || !password) {
+      return res.status(400).json({ message: 'Please fill in all required fields.' });
     }
 
-    const existingCode = await College.findOne({ where: { college_code } });
+    const existingCollege = await College.findOne({ where: { email: email.trim().toLowerCase() } });
+    const existingAdmin = await CollegeAdmin.findOne({ where: { email: email.trim().toLowerCase() } });
+    if (existingCollege || existingAdmin) {
+      return res.status(400).json({ message: 'Email address is already registered.' });
+    }
+
+    const existingCode = await College.findOne({ where: { college_code: college_code.trim() } });
     if (existingCode) {
-      return res.status(400).json({ message: 'College code already in use' });
+      return res.status(400).json({ message: 'College Code is already in use. Please choose a unique code.' });
     }
 
     const password_hash = await bcrypt.hash(password, 12);
@@ -29,20 +34,39 @@ exports.registerCollege = async (req, res) => {
     }
 
     const college = await College.create({
-      name, college_code, principal_name, election_officer,
-      email, phone, address, website, logo_url, password_hash,
+      name: name.trim(),
+      college_code: college_code.trim(),
+      principal_name: principal_name ? principal_name.trim() : '',
+      election_officer: election_officer ? election_officer.trim() : '',
+      email: email.trim().toLowerCase(),
+      phone: phone ? phone.trim() : '',
+      address: address ? address.trim() : '',
+      website: website ? website.trim() : null,
+      logo_url,
+      password_hash,
       status: 'pending'
     });
 
-    // Create college admin entry automatically
+    // Create or update college admin entry automatically
     const adminHash = await bcrypt.hash(password, 12);
-    await CollegeAdmin.create({
-      college_id: college.id,
-      name: election_officer,
-      email,
-      password_hash: adminHash,
-      role: 'admin'
+    const [adminRecord] = await CollegeAdmin.findOrCreate({
+      where: { email: email.trim().toLowerCase() },
+      defaults: {
+        college_id: college.id,
+        name: election_officer ? election_officer.trim() : name.trim(),
+        email: email.trim().toLowerCase(),
+        password_hash: adminHash,
+        role: 'admin'
+      }
     });
+
+    if (adminRecord.college_id !== college.id) {
+      await adminRecord.update({
+        college_id: college.id,
+        name: election_officer ? election_officer.trim() : name.trim(),
+        password_hash: adminHash
+      });
+    }
 
     await AuditLog.create({
       college_id: college.id,
@@ -63,7 +87,18 @@ exports.registerCollege = async (req, res) => {
     });
   } catch (error) {
     console.error('Registration error:', error);
-    res.status(500).json({ message: 'Registration failed', error: error.message });
+
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      const field = error.errors?.[0]?.path || 'field';
+      return res.status(400).json({ message: `The ${field} is already in use.` });
+    }
+
+    if (error.name === 'SequelizeValidationError') {
+      const valMsg = error.errors?.[0]?.message || 'Validation error';
+      return res.status(400).json({ message: valMsg });
+    }
+
+    res.status(500).json({ message: error.message || 'Registration failed' });
   }
 };
 
