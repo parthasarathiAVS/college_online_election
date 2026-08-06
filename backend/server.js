@@ -8,7 +8,7 @@ const path = require('path');
 const { sequelize } = require('./models');
 const { apiLimiter } = require('./middleware/rateLimiter');
 
-// Routes
+// Route Imports
 const authRoutes = require('./routes/authRoutes');
 const superAdminRoutes = require('./routes/superAdminRoutes');
 const studentRoutes = require('./routes/studentRoutes');
@@ -23,9 +23,8 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // ======================
-// Middleware
+// CORS Configuration
 // ======================
-const cors = require('cors');
 
 const allowedOrigins = [
   'http://localhost:5173',
@@ -45,14 +44,32 @@ app.use(cors({
   },
   credentials: true
 }));
+
 // ======================
-// Static Folder
+// Middleware
 // ======================
+
+app.use(helmet({
+  crossOriginResourcePolicy: {
+    policy: 'cross-origin'
+  }
+}));
+
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({
+  extended: true,
+  limit: '10mb'
+}));
+
+app.use(apiLimiter);
+
+// Static Upload Folder
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ======================
 // API Routes
 // ======================
+
 app.use('/api/auth', authRoutes);
 app.use('/api/superadmin', superAdminRoutes);
 app.use('/api/students', studentRoutes);
@@ -66,59 +83,58 @@ app.use('/api/reports', reportsRoutes);
 // ======================
 // Health Check
 // ======================
+
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'OK',
-    database: process.env.DB_DIALECT || 'sqlite',
     message: 'VoteVerse AI Backend is running',
-    timestamp: new Date(),
+    timestamp: new Date()
   });
 });
 
 // ======================
 // Error Handler
 // ======================
+
 app.use((err, req, res, next) => {
-  console.error(err);
+  console.error(err.stack);
 
   res.status(500).json({
     success: false,
-    message: err.message || 'Internal Server Error',
+    message: err.message
   });
 });
 
 // ======================
 // Start Server
 // ======================
+
 async function startServer() {
   try {
-    console.log("======================================");
-    console.log(" VoteVerse AI Backend Starting...");
-    console.log("======================================");
+    console.log('======================================');
+    console.log(' VoteVerse AI Backend Starting...');
+    console.log('======================================');
 
-    console.log("Database Dialect:", process.env.DB_DIALECT);
-    console.log("Database Host:", process.env.DB_HOST);
-    console.log("Database Name:", process.env.DB_NAME);
+    console.log('Database Dialect:', process.env.DB_DIALECT);
+    console.log('Database Host:', process.env.DB_HOST);
+    console.log('Database Name:', process.env.DB_NAME);
 
-    // Test Database Connection
     await sequelize.authenticate();
-    console.log("✅ Database Connected Successfully");
+    console.log('✅ Database Connected Successfully');
 
-    // Sync models without deleting data
-    await sequelize.sync({ alter: true });
-
-    console.log("✅ Database Tables Synced Successfully");
+    await sequelize.sync();
+    console.log('✅ Database Tables Synced Successfully');
 
     app.listen(PORT, () => {
-      console.log("======================================");
+      console.log('======================================');
       console.log(`🚀 Server Running on Port ${PORT}`);
       console.log(`🌐 API : http://localhost:${PORT}`);
       console.log(`❤️ Health : http://localhost:${PORT}/api/health`);
-      console.log("======================================");
+      console.log('======================================');
     });
 
   } catch (error) {
-    console.error("❌ Failed to start backend");
+    console.error('❌ Failed to start backend');
     console.error(error);
     process.exit(1);
   }
